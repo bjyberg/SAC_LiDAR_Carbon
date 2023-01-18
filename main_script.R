@@ -63,7 +63,6 @@ if (exists('Lidar_file')) {
   end_time <- Sys.time()
   elapsed_time <- end_time - start_time
   cat("Total time:", paste(round(elapsed_time, 2), 'minutes'), sep = '\n')
-  return(agb)
 }
 
 #### Code for processing a full folder of point clouds ####

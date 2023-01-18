@@ -4,7 +4,8 @@
 # suggest changing the algorithms used by the lidR package functions and their
 # related parameters (specifically for the tree segmentation, which can be done
 # in main_script.R, rather than here), to test which is best for different sites
-# and datasets.
+# and datasets. Other possible changes would be the algorithm for tree
+# detection, the resolution and smoothing of the chm, and the window sizes.
 #
 #
 # This script was developed as part of a larger soil carbon project at
@@ -19,7 +20,7 @@ library(sf)
 
 create_dtm <- function(point_cloud, output_path, site,
                        classify = FALSE, plot = FALSE) {
-  if (classify == TRUE) {
+  if (isTRUE(classify)) {
     #if true, this adds a ground class into the existing point cloud,
     #or overwrites the current ground class if it was already classified
     ground_alg <- csf() #can be pmf() or mcc(), see lidR package for details
@@ -30,7 +31,7 @@ create_dtm <- function(point_cloud, output_path, site,
   if (!missing(output_path)) {
     writeRaster(dtm, paste0(output_path, site, '_dtm.tif'))
   }
-  if (plot == TRUE) {
+  if (isTRUE(plot)) {
     plot_dtm3d(dtm)
   }
   return(dtm)
@@ -38,8 +39,8 @@ create_dtm <- function(point_cloud, output_path, site,
 
 create_chm <- function(point_cloud, output_path, site,
                        smooth = FALSE) {
-  chm <- rasterize_canopy(point_cloud, res = 5, pitfree(subcircle = 0.15))
-  if (smooth == TRUE) {
+  chm <- rasterize_canopy(point_cloud, res = .5, pitfree(subcircle = 0.15))
+  if (isTRUE(smooth)) {
     kernel <- matrix(1,3,3) #can easily be changed to different size
     chm <- terra::focal(chm, w = kernel, median, na.rm = TRUE)
   }
@@ -68,7 +69,7 @@ detect_trees <- function(point_cloud, chm, output_path, site,
   if (!missing(output_path)) {
     write_sf(crowns, paste0(output_path, site, '_crowns.gpkg'))
   }
-  if (plot == TRUE) {
+  if (isTRUE(plot)) {
     plot(chm)
     plot(crowns['convhull_area'], alpha = 0.5, add = TRUE)
   }

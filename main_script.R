@@ -31,12 +31,13 @@ Lidar_folder <- '~/lidar' #directory holding the lidar data if processing all
 #or 
 Lidar_file <- '~/lidar/treed.las' #for processing individual point clouds
 
-output_folder <- '~/lidar' #Required -- directory for outputs
-tree_type <- 'Angiosperm'
+output_folder <- '~/lidar/' #Required -- directory for outputs
+tree <- 'Angiosperm' #or Gymnosperm
 #segmentation_algorithm <- li2012() #Not required -- defaults to dalponte2016()
 
 # lidR uses half available cores by default, can be changed below
 # N_cores can be any value (up to the number of cores in available)
+# careful to only run this once, as it will use all cores if run again
 N_cores <- get_lidr_threads() *1.5 #changes to .75 available cores
 
 #### Code for processing individual point clouds ####
@@ -58,11 +59,11 @@ if (exists('Lidar_file')) {
   tree_segmentation <- detect_trees(norm_las, chm, window_size = variable,
                                     plot = TRUE)
   
-  agb <- calculate_biomass(tree_segmentation, tree_type = tree_type)
-  
+  agb <- calculate_biomass(tree_segmentation, tree_type = tree)
   end_time <- Sys.time()
   elapsed_time <- end_time - start_time
-  cat("Total time:", paste(round(elapsed_time/60, 2), 'minutes'), sep = '\n')
+  cat("Total time:", paste(round(elapsed_time, 2), 'minutes'), sep = '\n')
+  return(agb)
 }
 
 #### Code for processing a full folder of point clouds ####
@@ -75,20 +76,19 @@ if (exists('Lidar_folder')) {
                           recursive = F, #can be True if in sub-folders
                           full.names = T)
   
-  all_AGB <- lapply(las_files, function(x) { #function args can still changed
-    las <- readLAS(x)
+  all_AGB <- lapply(las_files, function(i) { #function args can still be changed
+    las <- readLAS(i)
     dtm <- create_dtm(las, classify = F)
     norm_las <- normalize_height(las, knnidw())
     chm <- create_chm(norm_las, smooth = TRUE)
     variable <- function(x) {x * 0.1 + 3}
     tree_segmentation <- detect_trees(norm_las, chm, window_size = variable)
-    agb <- calculate_biomass(tree_segmentation, tree_type = tree_type)
-    name <- tools::file_path_sans_ext(basename(x))
-    assign(paste0("agb_site_", name), agb)
-    writeVector(agb, paste0(output_folder, name, "_AGBpred.gpkg"))
+    name <- tools::file_path_sans_ext(basename(i)) #get site from file name
+    agb <- calculate_biomass(tree_segmentation, tree_type = tree,
+                             output_path = output_folder, site = name)
   })
   
   end_time <- Sys.time()
   elapsed_time <- end_time - start_time
-  cat("Total time:", paste(round(elapsed_time/60, 2), 'minutes'), sep = '\n')
+  cat("Total time:", paste(round(elapsed_time, 2), 'minutes'), sep = '\n')
 }

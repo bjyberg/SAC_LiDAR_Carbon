@@ -66,7 +66,7 @@ detect_trees <- function(point_cloud, chm, output_path, site,
                           geom = 'convex', 
                           attribute = 'tree_id')
   if (!missing(output_path)) {
-    writeVector(crowns, paste0(output_path, site, '_crowns.gpkg'))
+    write_sf(crowns, paste0(output_path, site, '_crowns.gpkg'))
   }
   if (plot == TRUE) {
     plot(chm)
@@ -76,11 +76,11 @@ detect_trees <- function(point_cloud, chm, output_path, site,
   return(crowns)
 }
   
-calculate_biomass <- function(crown_polygons, tree_type, output_path){
+calculate_biomass <- function(crown_polygons, tree_type, output_path, site){
   tree_z <- crown_polygons[['Z']]
   c_area <- crown_polygons[['convhull_area']]
   c_diameter <- sqrt(c_area / pi)
-  crown_polygons$'Crown_daimeter' <- c_diameter
+  crown_polygons$Crown_diameter <- c_diameter
   if (tree_type == 'angiosperm' | tree_type == 'Angiosperm') {
     a <- 0
     b <- 0
@@ -91,7 +91,7 @@ calculate_biomass <- function(crown_polygons, tree_type, output_path){
     warning("tree_type must be either 'angiosperm' or 'gymnosperm'")
   }
   
-  crown_polygons$'AGB_pred' <- ((0.016 + a) 
+  crown_polygons$AGB_pred <- ((0.016 + a) 
                                  * (tree_z * c_diameter)^(2.013 + b)
                                  * exp(0.204^2 / 2))
   #equation from Jucker, T., et al. (2016) Allometric equations for integrating 
@@ -105,7 +105,7 @@ calculate_biomass <- function(crown_polygons, tree_type, output_path){
   cd_summary <- summary(crown_polygons$Crown_diameter)
   
   if (!missing(output_path)) {
-    writeVector(crown_polygons, paste0(output_path, site, '_AGBcrowns.gpkg'))
+    write_sf(crown_polygons, paste0(output_path, site, '_AGBcrowns.gpkg'))
   }
   cat(sep = '\n')
   cat('Summary Statistics for height:', sep = '\n')

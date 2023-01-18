@@ -102,7 +102,7 @@ calculate_biomass <- function(crown_polygons, tree_type, output_path){
   total_AGB <- sum(crown_polygons$AGB_pred)
   AGB_summary <- summary(crown_polygons$AGB_pred)
   z_summary <- summary(crown_polygons$Z)
-  cd_summary <- summary(crown_polygons$c_diameter)
+  cd_summary <- summary(crown_polygons$Crown_diameter)
   
   if (!missing(output_path)) {
     writeVector(crown_polygons, paste0(output_path, site, '_AGBcrowns.gpkg'))

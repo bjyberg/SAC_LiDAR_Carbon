@@ -9,7 +9,8 @@
 # by reading and changing this script and the 'helper_functions.R' script. I
 # would suggest testing a few different algorithms for segmentation and tree
 # detections, as well as different internal parameters (i.e., window size,
-# smoothing).
+# smoothing). The renv files are to ensure reproducibility by managing
+# packages and dependencies. 
 #
 #
 # This script was developed as part of a larger soil carbon project at

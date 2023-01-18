@@ -3,7 +3,7 @@ library(lidR)
 library(sf)
 
 
-create_dtm <- function(point_cloud, output_folder, site,
+create_dtm <- function(point_cloud, output_path, site,
                        classify = FALSE, plot = FALSE) {
   if (classify == TRUE) {
     #if true, this adds a ground class into the existing point cloud,
@@ -13,8 +13,8 @@ create_dtm <- function(point_cloud, output_folder, site,
   }
   dtm_alg <- knnidw(k = 10L, p = 2) #can be kreiging or tin(), see lidR package
   dtm <- rasterize_terrain(point_cloud, algorithm = dtm_alg)
-  if (!missing(output_folder)) {
-    writeRaster(dtm, paste0(output_folder, site, '_dtm.tif'))
+  if (!missing(output_path)) {
+    writeRaster(dtm, paste0(output_path, site, '_dtm.tif'))
   }
   if (plot == TRUE) {
     plot_dtm3d(dtm)
@@ -22,15 +22,15 @@ create_dtm <- function(point_cloud, output_folder, site,
   return(dtm)
 }
 
-create_chm <- function(point_cloud, output_folder, site,
+create_chm <- function(point_cloud, output_path, site,
                        smooth = FALSE) {
   chm <- rasterize_canopy(point_cloud, res = 5, pitfree(subcircle = 0.15))
   if (smooth == TRUE) {
     kernel <- matrix(1,3,3) #can easily be changed to different size
     chm <- terra::focal(chm, w = kernel, median, na.rm = TRUE)
   }
-  if (!missing(output_folder)) {
-    writeRaster(dtm, paste0(output_folder, site, '_dtm.tif'))
+  if (!missing(output_path)) {
+    writeRaster(dtm, paste0(output_path, site, '_dtm.tif'))
   }
   return(chm)
 }
@@ -38,7 +38,7 @@ create_chm <- function(point_cloud, output_folder, site,
   
 
 
-detect_trees <- function(point_cloud, chm, output_folder, site,
+detect_trees <- function(point_cloud, chm, output_path, site,
                          segmentation_algorithm,
                          window_size = 3,
                          plot = FALSE) {
@@ -54,8 +54,8 @@ detect_trees <- function(point_cloud, chm, output_folder, site,
   crowns <- crown_metrics(point_cloud, func = .stdtreemetrics,
                           geom = 'convex', 
                           attribute = 'tree_id')
-  if (!missing(output_folder)) {
-    writeVector(crowns, paste0(output_folder, site, '_crowns.gpkg'))
+  if (!missing(output_path)) {
+    writeVector(crowns, paste0(output_path, site, '_crowns.gpkg'))
   }
   if (plot == TRUE) {
     plot(chm)
@@ -65,7 +65,7 @@ detect_trees <- function(point_cloud, chm, output_folder, site,
   return(crowns)
 }
   
-calculate_biomass <- function(crown_polygons, tree_type, output_folder){
+calculate_biomass <- function(crown_polygons, tree_type, output_path){
   tree_z <- crown_polygons[['Z']]
   c_area <- crown_polygons[['convhull_area']]
   c_diameter <- sqrt(c_area / pi)
@@ -93,10 +93,10 @@ calculate_biomass <- function(crown_polygons, tree_type, output_folder){
   z_summary <- summary(crown_polygons$Z)
   cd_summary <- summary(crown_polygons$c_diameter)
   
-  if (!missing(output_folder)) {
-    writeVector(crown_polygons, paste0(output_folder, site, '_AGBcrowns.gpkg'))
+  if (!missing(output_path)) {
+    writeVector(crown_polygons, paste0(output_path, site, '_AGBcrowns.gpkg'))
   }
-  cat(paste('The total AGB for the site is:', total_AGB, 'kg.'), sep = '\n')
+  cat(sep = '\n')
   cat('Summary Statistics for height:', sep = '\n')
   print(z_summary)
   cat('Summary Statistics for crown diameter:', sep = '\n')

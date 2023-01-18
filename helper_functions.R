@@ -1,0 +1,99 @@
+library(terra)
+library(lidR)
+library(sf)
+
+
+create_dtm <- function(point_cloud, output_folder, site,
+                       classify = FALSE, plot = FALSE) {
+  if (classify == TRUE) {
+    #if true, this adds a ground class into the existing point cloud,
+    #or overwrites the current ground class if it was already classified
+    ground_alg <- csf() #can be pmf() or mcc(), see lidR package for details
+    point_cloud <- classify_ground(point_cloud, algorithm = ground_alg)
+  }
+  dtm_alg <- knnidw(k = 10L, p = 2) #can be kreiging or tin(), see lidR package
+  dtm <- rasterize_terrain(point_cloud, algorithm = dtm_alg)
+  if (!missing(output_folder)) {
+    writeRaster(dtm, paste0(output_folder, site, '_dtm.tif'))
+  }
+  if (plot == TRUE) {
+    plot_dtm3d(dtm)
+  }
+  return(dtm)
+}
+
+create_chm <- function(point_cloud, output_folder, site,
+                       smooth = FALSE) {
+  chm <- rasterize_canopy(point_cloud, res = 5, pitfree(subcircle = 0.15))
+  if (smooth == TRUE) {
+    kernel <- matrix(1,3,3) #can easily be changed to different size
+    chm <- terra::focal(chm, w = kernel, median, na.rm = TRUE)
+  }
+  if (!missing(output_folder)) {
+    writeRaster(dtm, paste0(output_folder, site, '_dtm.tif'))
+  }
+  return(chm)
+}
+  
+  
+
+
+detect_trees <- function(point_cloud, chm, output_folder, site,
+                         segmentation_algorithm,
+                         window_size = 3,
+                         plot = FALSE) {
+  window <- window_size #this can be a fixed size or variable
+  t_tops <- locate_trees(chm, lmf(ws = window)) 
+  if (missing(segmentation_algorithm)) {
+    t_tops <- locate_trees(point_cloud, lmf(ws = window)) 
+    algo <- dalponte2016(chm, t_tops) #default, if not provided
+  } else {
+    algo <- segmentation_algorithm
+  }
+  point_cloud <- segment_trees(point_cloud, algo, attribute = 'tree_id')
+  crowns <- crown_metrics(point_cloud, func = .stdtreemetrics,
+                          geom = 'convex', 
+                          attribute = 'tree_id')
+  if (!missing(output_folder)) {
+    writeVector(crowns, paste0(output_folder, site, '_crowns.gpkg'))
+  }
+  if (plot == TRUE) {
+    plot(chm)
+    plot(crowns['convhull_area'], alpha = 0.5, add = TRUE)
+  }
+  
+  return(crowns)
+}
+  
+calculate_biomass <- function(crown_polygons, tree_type, output_folder){
+  tree_z <- crown_polygons[['Z']]
+  c_area <- crown_polygons[['convhull_area']]
+  c_diameter <- sqrt(c_area / pi)
+  if (tree_type == 'angiosperm' | tree_type == 'Angiosperm') {
+    a <- 0
+    b <- 0
+  } else if (tree_type == 'gymnosperm' | tree_type == 'Gymnosperm') {
+    a <- 0.093
+    b <- -0.223
+  } else {
+    warning("tree_type must be either 'angiosperm' or 'gymnosperm'")
+  }
+  
+  crown_polygons['AGB_pred'] <- ((0.016 + a) 
+                                 * (tree_z * c_diameter)^(2.013 + b)
+                                 * exp(0.204^2 / 2))
+  #equation from Jucker, T., et al. (2016) Allometric equations for integrating 
+  #remote sensing imagery into forest monitoring programmes. 
+  #Global Change Biology. 23(1). 177-190
+  #https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.13388
+  
+  total_AGB <- sum(crown_polygons$AGB_pred)
+  AGB_summary <- summary(crown_polygons$AGB_pred)
+  if (!missing(output_folder)) {
+    writeVector(crown_polygons, paste0(output_folder, site, '_AGBcrowns.gpkg'))
+  }
+  cat(paste('The total AGB for the site is:', total_AGB, 'kg.'), sep = '/n')
+  return(AGB_summary)
+}
+
+

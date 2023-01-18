@@ -1,15 +1,24 @@
 ## ######################################################################### ##
+# This script can be used to run above ground biomass estimates on a LiDAR 
+# point cloud. The script can be run solely by changing the options within
+# the set-up section to the desired files, the segmentation algorithm, etc.
+# Changing the algorithms used for DTM and CHM creation, tree top detection,
+# etc. will require changes in the 2 processing sections. Similarly, it is
+# possible to save all of these individual outputs to a folder through basic
+# modifications to the script. It should be relatively easy to implement these 
+# by reading and changing this script and the 'helper_functions.R' script. I
+# would suggest testing a few different algorithms for segmentation and tree
+# detections, as well as different internal parameters (i.e., window size,
+# smoothing).
 #
 #
-#
-#
-#
-#
-#
-#
+# This script was developed as part of a larger soil carbon project at
+# SAC consulting which was funded by the Scottish Government.
+# Author: Brayden Youngberg 
+# Contact: brayden.youngberg@sruc.ac.uk
 ## ######################################################################### ##
 
-#### Setup ####
+#### Set-up ####
 #the full script can be run just by changing these to the required data
 library(terra)
 library(lidR)
@@ -29,7 +38,7 @@ tree_type <- 'Angiosperm'
 # N_cores can be any value (up to the number of cores in available)
 N_cores <- get_lidr_threads() *1.5 #changes to .75 available cores
 
-####  the code for processing individual point clouds ####
+#### Code for processing individual point clouds ####
 if (exists('Lidar_file')) {
   start_time <- Sys.time()
   set_lidr_threads(N_cores)
@@ -55,7 +64,7 @@ if (exists('Lidar_file')) {
   cat("Total time:", paste(round(elapsed_time/60, 2), 'minutes'), sep = '\n')
 }
 
-#### the code for processing a full folder of point clouds ####
+#### Code for processing a full folder of point clouds ####
 if (exists('Lidar_folder')) {
   start_time <- Sys.time()
   set_lidr_threads(N_cores)

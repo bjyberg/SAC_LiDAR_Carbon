@@ -1,3 +1,17 @@
+## ######################################################################### ##
+# Below is a set of functions which are used when running main_script.R. The 
+# parameters for these functions can be changed relatively easy, and I would
+# suggest changing the algorithms used by the lidR package functions and their
+# related parameters (specifically for the tree segmentation, which can be done
+# in main_script.R, rather than here), to test which is best for different sites
+# and datasets.
+#
+#
+# This script was developed as part of a larger soil carbon project at
+# SAC consulting which was funded by the Scottish Government.
+# Author: Brayden Youngberg 
+# Contact: brayden.youngberg@sruc.ac.uk
+## ######################################################################### ##
 library(terra)
 library(lidR)
 library(sf)
@@ -34,9 +48,6 @@ create_chm <- function(point_cloud, output_path, site,
   }
   return(chm)
 }
-  
-  
-
 
 detect_trees <- function(point_cloud, chm, output_path, site,
                          segmentation_algorithm,

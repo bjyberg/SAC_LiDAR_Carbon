@@ -67,7 +67,18 @@ detect_trees <- function(point_cloud, chm, output_path, site,
                           geom = 'convex', 
                           attribute = 'tree_id')
   if (!missing(output_path)) {
-    write_sf(crowns, paste0(output_path, site, '_crowns.gpkg'))
+    tryCatch( #added function so the script doesn't stop with a write error
+      {
+        write_sf(crowns, paste0(output_path, site, '_crowns.gpkg'))
+      } error = function(e) {
+        message('An error occured while saving the segmented tree polygons:')
+        print(e)
+        print('outputs not saved to file, check object instead')
+      } warning = function(w) {
+        message('An warning occured while saving the segmented tree polygons:')
+        print(w)
+      }
+    )
   }
   if (isTRUE(plot)) {
     plot(chm)
@@ -106,7 +117,19 @@ calculate_biomass <- function(crown_polygons, tree_type, output_path, site){
   cd_summary <- summary(crown_polygons$Crown_diameter)
   
   if (!missing(output_path)) {
-    write_sf(crown_polygons, paste0(output_path, site, '_AGBcrowns.gpkg'))
+    tryCatch( #added function so the script doesn't stop with a write error
+      {
+        write_sf(crown_polygons, paste0(output_path, site, '_AGBcrowns.gpkg'))
+      } error = function(e) {
+        message('An error occured while saving the segmented tree polygons:')
+        print(e)
+        print('outputs not saved to file, check object instead')
+      } warning = function(w) {
+        message('An warning occured while saving the segmented tree polygons:')
+        print(w)
+        print('outputs not saved to file, check object instead')
+      }
+    )
   }
   cat(sep = '\n')
   cat('Summary Statistics for height:', sep = '\n')

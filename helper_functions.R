@@ -73,14 +73,15 @@ detect_trees <- function(point_cloud, chm, output_path, site,
           writeLAS(point_cloud, paste0(output_path, site, 'tree_segmented.las'))
         }
         write_sf(crowns, paste0(output_path, site, '_crowns.gpkg'))
-      }
+      },
       error = function(e) {
-        message('An error occured while saving the segmented trees:')
-        print(e)
-        print('outputs not saved to file, check object instead')
-      } warning = function(w) {
-        message('An warning occured while saving the segmented trees:')
-        print(w)
+          message('An error occured while saving the segmented trees:')
+          print(e)
+          print('outputs not saved to file, check object instead')
+      },
+      warning = function(w) {
+          message('An warning occured while saving the segmented trees:')
+          print(w)
       }
     )
   }
@@ -124,11 +125,13 @@ calculate_biomass <- function(crown_polygons, tree_type, output_path, site){
     tryCatch( #added function so the script doesn't stop with a write error
       {
         write_sf(crown_polygons, paste0(output_path, site, '_AGBcrowns.gpkg'))
-      } error = function(e) {
+      },
+      error = function(e) {
         message('An error occured while saving the AGB tree vector:')
         print(e)
         print('outputs not saved to file, check object instead')
-      } warning = function(w) {
+      },
+      warning = function(w) {
         message('An warning occured while saving the AGB tree vector:')
         print(w)
         print('outputs not saved to file, check object instead')

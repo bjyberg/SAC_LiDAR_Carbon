@@ -27,12 +27,12 @@ library(sf)
 source('helper_functions.R') #script with the custom functions used
 #remotes::install_github("Jean-Romain/lidRplugins") --adds extra seg. algorithms
 
-Lidar_folder <- '~/lidar' #directory holding the lidar data if processing all
+#Lidar_folder <- '~/lidar' #directory holding the lidar data if processing all
 #or 
 Lidar_file <- '~/lidar/treed.las' #for processing individual point clouds
 
 output_folder <- '~/lidar/' #Required -- directory for outputs
-tree <- 'Angiosperm' #or Gymnosperm
+tree <- 'Angiosperm' #Gymnosperm, angiosperm, hedgerow, or hedgerow_random
 #segmentation_algorithm <- li2012() #Not required -- defaults to dalponte2016()
 
 # lidR uses half available cores by default, can be changed below
@@ -48,18 +48,24 @@ if (exists('Lidar_file')) {
   
   las <- readLAS(Lidar_file)
   
-  dtm <- create_dtm(las, classify = T, plot = F)
+  dtm <- create_dtm(las, classify = F, plot = T)
   
   norm_las <- normalize_height(las, knnidw()) #other algorithms available
   
   chm <- create_chm(norm_las, smooth = TRUE)
   
-  variable <- function(x) {x * 0.1 + 3} #function for variable window size
-  #Seg_algo <- li2012() #there are many options for this in lidR 
-  tree_segmentation <- detect_trees(norm_las, chm, window_size = variable,
-                                    plot = TRUE)
-  
-  agb <- calculate_biomass(tree_segmentation, tree_type = tree)
+  if (tree == 'hedgerow_random' | tree == 'Hedgerow_random') {
+    hedgerow_agb <- random_hedgerows(chm, point_distance = 3, iterations = 100)
+    #point distance and number of monte carlo iterations should be tuned, and
+    #the study using this method performed a sensitivity analysis for distance
+  } else { 
+    variable <- function(x) {x * 0.1 + 3} #function for variable window size
+    #Seg_algo <- li2012() #there are many options for this in lidR 
+    tree_segmentation <- detect_trees(norm_las, chm, window_size = variable,
+                                      plot = F,)
+    agb <- calculate_biomass(tree_segmentation, tree_type = tree,
+                             output_path = output_folder, site = 'test')
+  }
   end_time <- Sys.time()
   elapsed_time <- end_time - start_time
   cat("Total time:", paste(round(elapsed_time, 2), 'minutes'), sep = '\n')

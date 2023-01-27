@@ -9,8 +9,9 @@
 # by reading and changing this script and the 'helper_functions.R' script. I
 # would suggest testing a few different algorithms for segmentation and tree
 # detections, as well as different internal parameters (i.e., window size,
-# smoothing). The renv files are to ensure reproducibility by managing
-# packages and dependencies. 
+# smoothing). If working with large areas & different tree types,
+#I would crop out the species/hedgerows and saving them to different folders
+# with the site as the file name, but other options could easily be implemented.
 #
 #
 # This script was developed as part of a larger soil carbon project at
@@ -24,6 +25,7 @@
 library(terra)
 library(lidR)
 library(sf)
+library(spatstat)
 source('helper_functions.R') #script with the custom functions used
 #remotes::install_github("Jean-Romain/lidRplugins") --adds extra seg. algorithms
 

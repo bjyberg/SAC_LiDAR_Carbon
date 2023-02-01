@@ -25,7 +25,7 @@
 library(terra)
 library(lidR)
 library(sf)
-library(spatstat)
+library(spatstatBray)
 source('helper_functions.R') #script with the custom functions used
 #remotes::install_github("Jean-Romain/lidRplugins") --adds extra seg. algorithms
 
@@ -50,7 +50,7 @@ if (exists('Lidar_file')) {
   
   las <- readLAS(Lidar_file)
   
-  dtm <- create_dtm(las, classify = F, plot = T)
+  dtm <- create_dtm(las, classify = F, plot = F)
   
   norm_las <- normalize_height(las, knnidw()) #other algorithms available
   
@@ -58,11 +58,11 @@ if (exists('Lidar_file')) {
   
   if (tree == 'hedgerow_random' | tree == 'Hedgerow_random') {
     hedgerow_agb <- random_hedgerows(chm, point_distance = 3, iterations = 100)
-    #point distance and number of monte carlo iterations should be tuned, and
+    #point distance and number of iterations should be tuned, and
     #the study using this method performed a sensitivity analysis for distance
   } else { 
-    variable <- function(x) {x * 0.1 + 3} #function for variable window size
-    #Seg_algo <- li2012() #there are many options for this in lidR 
+    variable <- function(x) {x * 0.1 + 5} #function for variable window size
+    Seg_algo <- watershed(chm, th_tree = 5, tol = .2) #there are many options for this in lidR 
     tree_segmentation <- detect_trees(norm_las, chm, window_size = variable,
                                       plot = F,)
     agb <- calculate_biomass(tree_segmentation, tree_type = tree,

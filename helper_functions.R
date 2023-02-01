@@ -39,27 +39,44 @@ create_dtm <- function(point_cloud, output_path, site,
 }
 
 create_chm <- function(point_cloud, output_path, site,
-                       smooth = FALSE) {
+                       smooth = FALSE, plot = FALSE) {
   chm <- rasterize_canopy(point_cloud, res = .5, pitfree(subcircle = 0.15))
   if (isTRUE(smooth)) {
-    kernel <- matrix(1,3,3) #can easily be changed to different size
+    kernel <- matrix(1,5,5) #can easily be changed to different size
     chm <- terra::focal(chm, w = kernel, median, na.rm = TRUE)
   }
   if (!missing(output_path)) {
-    writeRaster(dtm, paste0(output_path, site, '_dtm.tif'))
+    tryCatch(
+      {
+        writeRaster(dtm, paste0(output_path, site, '_dtm.tif'))
+      },
+      error = function(e) {
+        message('An error occured while saving the chm:')
+        print(e)
+        print('outputs not saved to file, check object instead')
+      },
+      warning = function(w) {
+        message('An warning occured while saving the chm:')
+        print(w)
+        print('outputs not saved to file, check object instead')
+      }
+    )
+  }
+  if (isTRUE(plot)) {
+    plot(chm)
   }
   return(chm)
 }
 
 detect_trees <- function(point_cloud, chm, output_path, site,
-                         segmentation_algorithm,
+                         segmentation_algorithm, min_tree = 5,
                          window_size = 3, save_las = FALSE,
                          plot = FALSE) {
   window <- window_size #this can be a fixed size or variable
   t_tops <- locate_trees(chm, lmf(ws = window)) 
   if (missing(segmentation_algorithm)) {
     t_tops <- locate_trees(point_cloud, lmf(ws = window)) 
-    algo <- dalponte2016(chm, t_tops) #default, if not provided
+    algo <- dalponte2016(chm, t_tops, th_tree = min_tree) #default
   } else {
     algo <- segmentation_algorithm
   }

@@ -25,7 +25,7 @@
 library(terra)
 library(lidR)
 library(sf)
-library(spatstatBray)
+library(spatstat)
 source('helper_functions.R') #script with the custom functions used
 #remotes::install_github("Jean-Romain/lidRplugins") --adds extra seg. algorithms
 

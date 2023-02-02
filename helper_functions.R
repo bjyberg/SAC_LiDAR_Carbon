@@ -187,7 +187,7 @@ calculate_biomass <- function(crown_polygons, tree_type, output_path, site){
 }
 
 random_hedgerows <- function(chm, point_distance, iterations) {
-  clean_chm <- classify(chm, cbind(0, NA))
+  clean_chm <- clamp(chm, lower = 1.5, values = F)
   chm_extent <- as.polygons(clean_chm > -Inf)
   agb_iterations <- data.frame()
   for (i in 1:iterations) {
@@ -202,7 +202,6 @@ random_hedgerows <- function(chm, point_distance, iterations) {
   hedge_agb_stats <- summary(agb_iterations)
   hedge_txt <- c('Random hedgerow method', '\n', 'Summary for hedgerow agb:',
                  '\n', hedge_agb_stats)
-  
   cat(hedge_txt, sep = '\n')
   if (!missing(output_path)) {
     tryCatch( #added function so the script doesn't stop with a write error

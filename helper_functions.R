@@ -111,11 +111,23 @@ detect_trees <- function(point_cloud, chm, output_path, site,
   return(crowns)
 }
   
-calculate_biomass <- function(crown_polygons, tree_type, output_path, site){
+calculate_biomass <- function(crown_polygons, tree_type, output_path, site, DHH = TRUE){
   tree_z <- crown_polygons[['Z']]
   c_area <- crown_polygons[['convhull_area']]
   c_diameter <- sqrt(c_area / pi)
   crown_polygons$Crown_diameter <- c_diameter
+  if (isTRUE(DHH)) {
+    crown_polygons$DHH <- (0.557 * (tree_z - c_diameter)^0.809
+                          * exp((0.056^2) / 2))
+    DBH_summary <- summary(crown_polygons$DHH)
+    #equation from Jucker, T., et al. (2016) Allometric equations for 
+    #integrating remote sensing imagery into forest monitoring programmes. 
+    #Global Change Biology. 23(1). 177-190
+    #https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.13388
+
+    #allometric for DBH
+    #crown_polygons$DBH_Biomass <- some formula
+  }
   if (tree_type == 'angiosperm' | tree_type == 'Angiosperm') {
     a <- 0
     b <- 0
@@ -150,6 +162,11 @@ calculate_biomass <- function(crown_polygons, tree_type, output_path, site){
                 paste(total_AGB, 'kg.'))
   
   txt <- capture.output(
+    cat(sep = '\n'),
+    if (exists('DBH_summary')) {
+      cat('Summary Statistics for DBH:', sep = '\n')
+      print(DBH_summary)
+    }
     cat(sep = '\n'),
     cat('Summary Statistics for height:', sep = '\n'),
     print(z_summary),

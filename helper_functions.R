@@ -111,22 +111,30 @@ detect_trees <- function(point_cloud, chm, output_path, site,
   return(crowns)
 }
   
-calculate_biomass <- function(crown_polygons, tree_type, output_path, site, DHH = TRUE){
+calculate_biomass <- function(crown_polygons, tree_type, output_path, site,
+                              DBH = TRUE){
   tree_z <- crown_polygons[['Z']]
   c_area <- crown_polygons[['convhull_area']]
   c_diameter <- sqrt(c_area / pi)
   crown_polygons$Crown_diameter <- c_diameter
-  if (isTRUE(DHH)) {
+  if (isTRUE(DBH)) {
     crown_polygons$DHH <- (0.557 * (tree_z - c_diameter)^0.809
                           * exp((0.056^2) / 2))
     DBH_summary <- summary(crown_polygons$DHH)
-    #equation from Jucker, T., et al. (2016) Allometric equations for 
-    #integrating remote sensing imagery into forest monitoring programmes. 
-    #Global Change Biology. 23(1). 177-190
-    #https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.13388
-
-    #allometric for DBH
-    #crown_polygons$DBH_Biomass <- some formula
+    # equation from Jucker, T., et al. (2016) Allometric equations for
+    # integrating remote sensing imagery into forest monitoring programmes.
+    # Global Change Biology. 23(1). 177-190
+    # https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.13388
+    p <- 0.525
+    crown_polygons$DBH_Biomass <- (0.0673
+    * (p * (c_diameter^2) * tree_z)^0.976
+      * exp((0.367^2) / 2))
+    # NEEDS CITED
+    DBH_Biomass_summary <- summary(crown_polygons$DBH_Biomass)
+    DBH_AGB_total <- sum(crown_polygons$DBH_Biomass)
+    DBH_agb_txt <- c(paste('The total DBH calculated AGB for',
+                  tree_type, 'on the site is:'),
+                  paste(DBH_AGB_total, 'kg.'))
   }
   if (tree_type == 'angiosperm' | tree_type == 'Angiosperm') {
     a <- 0
@@ -160,13 +168,16 @@ calculate_biomass <- function(crown_polygons, tree_type, output_path, site, DHH 
   cd_summary <- summary(crown_polygons$Crown_diameter)
   t_agb_txt <- c(paste('The total AGB for', tree_type, 'on the site is:'),
                 paste(total_AGB, 'kg.'))
-  
+
   txt <- capture.output(
     cat(sep = '\n'),
-    if (exists('DBH_summary')) {
-      cat('Summary Statistics for DBH:', sep = '\n')
+    if (exists("DBH_summary")) {
+      cat("Summary Statistics for DBH:", sep = "\n")
       print(DBH_summary)
-    }
+      cat("Summary Statistics for DBH-based AGB:", sep = "\n")
+      print(DBH_Biomass_summary)
+      cat(DBH_agb_txt, sep = '\n')
+    },
     cat(sep = '\n'),
     cat('Summary Statistics for height:', sep = '\n'),
     print(z_summary),

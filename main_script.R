@@ -32,7 +32,6 @@ source('helper_functions.R') #script with the custom functions used
 #Lidar_folder <- '~/lidar' #directory holding the lidar data if processing all
 #or 
 Lidar_file <- '~/lidar/treed.las' #for processing individual point clouds
-
 output_folder <- '~/lidar/' #Required -- directory for outputs
 tree <- 'Angiosperm' #Gymnosperm, angiosperm, hedgerow, or hedgerow_random
 #segmentation_algorithm <- li2012() #Not required -- defaults to dalponte2016()
@@ -54,7 +53,7 @@ if (exists('Lidar_file')) {
   
   norm_las <- normalize_height(las, knnidw()) #other algorithms available
   
-  chm <- create_chm(norm_las, smooth = TRUE)
+  chm <- create_chm(norm_las, smooth = F)
   
   if (tree == 'hedgerow_random' | tree == 'Hedgerow_random') {
     hedgerow_agb <- random_hedgerows(chm, point_distance = 3, iterations = 100)
@@ -62,9 +61,9 @@ if (exists('Lidar_file')) {
     #the study using this method performed a sensitivity analysis for distance
   } else { 
     variable <- function(x) {x * 0.1 + 5} #function for variable window size
-    Seg_algo <- watershed(chm, th_tree = 5, tol = .2) #there are many options for this in lidR 
+    Seg_algo <- watershed(chm, th_tree = 5, tol = .2) #other algorithms available
     tree_segmentation <- detect_trees(norm_las, chm, window_size = variable,
-                                      plot = F,)
+                                      plot = F)
     agb <- calculate_biomass(tree_segmentation, tree_type = tree,
                              output_path = output_folder, site = 'test')
   }

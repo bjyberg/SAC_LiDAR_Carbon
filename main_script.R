@@ -90,12 +90,14 @@ if (exists('Lidar_folder')) {
   all_AGB <- lapply(las_files, function(i) { #function args can still be changed
     las <- readLAS(i)
     name <- tools::file_path_sans_ext(basename(i)) #get site from file name
-    dtm <- create_dtm(las, classify = F)
+    dtm <- create_dtm(las, classify = F, output_path = output_folder, site = name)
     norm_las <- normalize_height(las, knnidw())
-    chm <- create_chm(norm_las, smooth = TRUE)
-    variable <- function(x) {x * 0.1 + 3}
+    chm <- create_chm(norm_las, smooth = T, 
+                      output_path = output_folder, site = name)
+    variable <- function(x) {x * 0.1 + 5}
     tree_segmentation <- detect_trees(norm_las, chm, window_size = variable)
-    agb <- calculate_biomass(tree_segmentation, tree_type = tree,
+    tree_folder <- 
+    agb <- calculate_biomass(tree_segmentation, tree_type = tree_folder,
                              output_path = output_folder, site = name)
   })
   

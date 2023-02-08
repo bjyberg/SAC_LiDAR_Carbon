@@ -33,13 +33,15 @@ source('helper_functions.R') #script with the custom functions used
 #or 
 Lidar_file <- '~/lidar/treed.las' #for processing individual point clouds
 output_folder <- '~/lidar/' #Required -- directory for outputs
-tree <- 'Angiosperm' #Gymnosperm, angiosperm, hedgerow, or hedgerow_random
+tree <- 'Angiosperm' #Gymnosperm, angiosperm, or hedgerow_random 
+#(hedgerow also available as tree type to test watershed segmentation)
+site_name <- tools::file_path_sans_ext(basename(Lidar_file)) #name for outputs
 #segmentation_algorithm <- li2012() #Not required -- defaults to dalponte2016()
 
 # lidR uses half available cores by default, can be changed below
 # N_cores can be any value (up to the number of cores in available)
 # careful to only run this once, as it will use all cores if run again
-N_cores <- get_lidr_threads() *1.5 #changes to .75 available cores
+N_cores <- 18 #get_lidr_threads() *1.5 #changes to .75 available cores (18/24)
 
 #### Code for processing individual point clouds ####
 if (exists('Lidar_file')) {
@@ -49,23 +51,26 @@ if (exists('Lidar_file')) {
   
   las <- readLAS(Lidar_file)
   
-  dtm <- create_dtm(las, classify = F, plot = F)
+  dtm <- create_dtm(las, classify = F, plot = F, output_path = output_folder,
+                    site = site_name)
   
   norm_las <- normalize_height(las, knnidw()) #other algorithms available
   
-  chm <- create_chm(norm_las, smooth = F)
+  chm <- create_chm(norm_las, smooth = T, output_path = output_folder,
+                    site = site_name)
   
   if (tree == 'hedgerow_random' | tree == 'Hedgerow_random') {
-    hedgerow_agb <- random_hedgerows(chm, point_distance = 3, iterations = 100)
+    hedgerow_agb <- random_hedgerows(chm, point_distance = 2, iterations = 30)
     #point distance and number of iterations should be tuned, and
     #the study using this method performed a sensitivity analysis for distance
   } else { 
     variable <- function(x) {x * 0.1 + 5} #function for variable window size
-    Seg_algo <- watershed(chm, th_tree = 5, tol = .2) #other algorithms available
+    Seg_algo <- watershed(chm, th_tree = 5, tol = .2, ext = 1)
     tree_segmentation <- detect_trees(norm_las, chm, window_size = variable,
-                                      plot = F)
-    agb <- calculate_biomass(tree_segmentation, tree_type = tree,
-                             output_path = output_folder, site = 'test')
+                                      plot = F,
+                                      segmentation_algorithm = Seg_algo)
+    agb <- calculate_biomass(tree_segmentation, tree_type = tree, DBH = T,
+                             output_path = output_folder, site = site_name)
   }
   end_time <- Sys.time()
   elapsed_time <- end_time - start_time

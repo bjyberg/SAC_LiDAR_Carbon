@@ -48,7 +48,7 @@ create_chm <- function(point_cloud, output_path, site,
   if (!missing(output_path)) {
     tryCatch(
       {
-        writeRaster(dtm, paste0(output_path, site, '_dtm.tif'))
+        writeRaster(dtm, paste0(output_path, site, '_chm.tif'))
       },
       error = function(e) {
         message('An error occured while saving the chm:')
@@ -118,23 +118,24 @@ calculate_biomass <- function(crown_polygons, tree_type, output_path, site,
   c_diameter <- sqrt(c_area / pi)
   crown_polygons$Crown_diameter <- c_diameter
   if (isTRUE(DBH)) {
-    crown_polygons$DHH <- (0.557 * (tree_z - c_diameter)^0.809
+    crown_polygons$Tree_DBH <- (0.557 * (tree_z * c_diameter)^0.809
                           * exp((0.056^2) / 2))
-    DBH_summary <- summary(crown_polygons$DHH)
+    Tree_DBH <- crown_polygons[['Tree_DBH']]
+    DBH_summary <- summary(crown_polygons$Tree_DBH)
     # equation from Jucker, T., et al. (2016) Allometric equations for
     # integrating remote sensing imagery into forest monitoring programmes.
     # Global Change Biology. 23(1). 177-190
     # https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.13388
-    p <- 0.525
+    p <- 0.525 # Wood Density
     crown_polygons$DBH_Biomass <- (0.0673
-    * (p * (c_diameter^2) * tree_z)^0.976
+    * (p * (Tree_DBH^2) * tree_z)^0.976
       * exp((0.367^2) / 2))
     # NEEDS CITED
     DBH_Biomass_summary <- summary(crown_polygons$DBH_Biomass)
     DBH_AGB_total <- sum(crown_polygons$DBH_Biomass)
     DBH_agb_txt <- c(paste('The total DBH calculated AGB for',
                   tree_type, 'on the site is:'),
-                  paste(DBH_AGB_total, 'kg.'))
+                  paste(DBH_AGB_total, 'kg.')) # Make sure unit is correct... 
   }
   if (tree_type == 'angiosperm' | tree_type == 'Angiosperm') {
     a <- 0
@@ -214,41 +215,44 @@ calculate_biomass <- function(crown_polygons, tree_type, output_path, site,
   return(crown_polygons)
 }
 
-random_hedgerows <- function(chm, point_distance, iterations) {
+random_hedgerows <- function(chm, point_distance, iterations,
+                             output_path, site) {
   clean_chm <- clamp(chm, lower = 1.5, values = F)
   chm_extent <- as.polygons(clean_chm > -Inf)
-  agb_iterations <- data.frame()
+  hedge_agb_iterations <- data.frame()
   for (i in 1:iterations) {
     points <- st_sample(st_as_sf(chm_extent), type = 'SSI', r = point_distance)
     random_heights <- extract(chm, points, ID = F)
     agb <- (0.179 * random_heights^3.3)
     site_agb <- sum(agb)
-    agb_iterations <- rbind(agb_iterations, site_agb)
+    hedge_agb_iterations <- rbind(hedge_agb_iterations, site_agb)
     cat(paste("Iteration", i, 'complete -', iterations - i, 'remain'), sep = '\n')
   }
-  names(agb_iterations) <- 'site_agb'
-  hedge_agb_stats <- summary(agb_iterations)
+  names(hedge_agb_iterations) <- 'site_agb'
+  hedge_agb_stats <- summary(hedge_agb_iterations)
   hedge_txt <- c('Random hedgerow method', '\n', 'Summary for hedgerow agb:',
                  '\n', hedge_agb_stats)
   cat(hedge_txt, sep = '\n')
   if (!missing(output_path)) {
     tryCatch( #added function so the script doesn't stop with a write error
       {
-        writeLines(agb_stats, paste0(output_path, site, '_', tree_type,
-                                        '_AGBcrowns.txt'))
+        writeLines(hedge_agb_stats, paste0(output_path, site, '_', tree_type,
+                                        'Hedge_AGB_Summary.txt'))
+        write.csv(hedge_agb_iterations, paste0(output_path, site,
+                                         'Hedge_AGB_iterations.csv'))
       },
       error = function(e) {
-        message('An error occured while saving the output:')
+        message('An error occured while saving the random hedge output:')
         print(e)
         print('not saved to file, check object instead')
       },
       warning = function(w) {
-        message('An warning occured while saving the output:')
+        message('An warning occured while saving therandom hedge output:')
         print(w)
         print('not saved to file, check object instead')
       }
     )
-  return(agb_iterations)
+  return(hedge_agb_iterations)
   }
 }
 

@@ -74,7 +74,7 @@ if (exists('Lidar_file')) {
   }
   end_time <- Sys.time()
   elapsed_time <- end_time - start_time
-  cat("Total time:", paste(round(elapsed_time, 2), 'minutes'), sep = '\n')
+  cat("Total time:", elapsed_time, sep = '\n')
 }
 
 #### Code for processing a full folder of point clouds ####
@@ -87,7 +87,7 @@ if (exists('Lidar_folder')) {
                           recursive = F, #can be True if in sub-folders
                           full.names = T)
   
-  all_AGB <- lapply(las_files, function(i) { #function args can still be changed
+  lapply(las_files, function(i) { # not sure if this is the best method, but whatever - it works
     las <- readLAS(i)
     name <- tools::file_path_sans_ext(basename(i)) #get site from file name
     dtm <- create_dtm(las, classify = F, output_path = output_folder, site = name)
@@ -96,12 +96,11 @@ if (exists('Lidar_folder')) {
                       output_path = output_folder, site = name)
     variable <- function(x) {x * 0.1 + 5}
     tree_segmentation <- detect_trees(norm_las, chm, window_size = variable)
-    tree_folder <- 
     agb <- calculate_biomass(tree_segmentation, tree_type = tree_folder,
                              output_path = output_folder, site = name)
   })
   
   end_time <- Sys.time()
   elapsed_time <- end_time - start_time
-  cat("Total time:", paste(round(elapsed_time, 2), 'minutes'), sep = '\n')
+  cat("Total time:", elapsed_time, sep = '\n')
 }

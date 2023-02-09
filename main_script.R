@@ -31,11 +31,10 @@ source('helper_functions.R') #script with the custom functions used
 
 #Lidar_folder <- '~/lidar' #directory holding the lidar data if processing all
 #or 
-Lidar_file <- '~/lidar/treed.las' #for processing individual point clouds
-output_folder <- '~/lidar/' #Required -- directory for outputs
+Lidar_file <- '~/lidar/Crop_test.las' #for processing individual point clouds
+output_folder <- '~/lidar/test/' #Required -- directory for outputs
 tree <- 'Angiosperm' #Gymnosperm, angiosperm, or hedgerow_random 
 #(hedgerow also available as tree type to test watershed segmentation)
-site_name <- tools::file_path_sans_ext(basename(Lidar_file)) #name for outputs
 #segmentation_algorithm <- li2012() #Not required -- defaults to dalponte2016()
 
 # lidR uses half available cores by default, can be changed below
@@ -46,6 +45,7 @@ N_cores <- 18 #get_lidr_threads() *1.5 #changes to .75 available cores (18/24)
 #### Code for processing individual point clouds ####
 if (exists('Lidar_file')) {
   start_time <- Sys.time()
+  site_name <- tools::file_path_sans_ext(basename(Lidar_file)) #name for outputs
   set_lidr_threads(N_cores)
   cat(paste('Using', get_lidr_threads(), 'cores'), sep = '\n')
   
@@ -92,12 +92,18 @@ if (exists('Lidar_folder')) {
     name <- tools::file_path_sans_ext(basename(i)) #get site from file name
     dtm <- create_dtm(las, classify = F, output_path = output_folder, site = name)
     norm_las <- normalize_height(las, knnidw())
+    rm(las)
     chm <- create_chm(norm_las, smooth = T, 
                       output_path = output_folder, site = name)
-    variable <- function(x) {x * 0.1 + 5}
-    tree_segmentation <- detect_trees(norm_las, chm, window_size = variable)
-    agb <- calculate_biomass(tree_segmentation, tree_type = tree_folder,
-                             output_path = output_folder, site = name)
+    if (tree == 'hedgerow_random' | tree == 'Hedgerow_random') {
+      hedgerow_agb <- random_hedgerows(chm, point_distance = 2, iterations = 30,
+                                       output_path = output_folder, site = name)
+    } else {
+      variable <- function(x) {x * 0.1 + 5}
+      tree_segmentation <- detect_trees(norm_las, chm, window_size = variable)
+      agb <- calculate_biomass(tree_segmentation, tree_type = tree,
+                              output_path = output_folder, site = name)
+    }
   })
   
   end_time <- Sys.time()

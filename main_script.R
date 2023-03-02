@@ -16,7 +16,7 @@
 #
 # This script was developed as part of a larger soil carbon project at
 # SAC consulting which was funded by the Scottish Government.
-# Author: Brayden Youngberg 
+# Author: Brayden Youngberg
 # Contact: brayden.youngberg@sruc.ac.uk
 ## ######################################################################### ##
 
@@ -31,16 +31,15 @@ source('helper_functions.R') #script with the custom functions used
 
 #Lidar_folder <- '~/lidar' #directory holding the lidar data if processing all
 #or 
-Lidar_file <- '~/lidar/Crop_test.las' #for processing individual point clouds
-output_folder <- '~/lidar/test/' #Required -- directory for outputs
-tree <- 'Angiosperm' #Gymnosperm, angiosperm, or hedgerow_random 
-#(hedgerow also available as tree type to test watershed segmentation)
-#segmentation_algorithm <- li2012() #Not required -- defaults to dalponte2016()
+Lidar_file <- '~/lidar/treed.las' #for processing individual point clouds
+output_folder <- '~/lidar/test2/' #Required -- directory for outputs
+tree <- 'hedgerow' #Gymnosperm, angiosperm, or hedgerow_random 
+#(hedgerow also available as tree type to test segmentation on hedges)
 
 # lidR uses half available cores by default, can be changed below
 # N_cores can be any value (up to the number of cores in available)
 # careful to only run this once, as it will use all cores if run again
-N_cores <- 18 #get_lidr_threads() *1.5 #changes to .75 available cores (18/24)
+N_cores <- 3 #get_lidr_threads() *1.5 #changes to .75 available cores (18/24)
 
 #### Code for processing individual point clouds ####
 if (exists('Lidar_file')) {
@@ -51,7 +50,7 @@ if (exists('Lidar_file')) {
   
   las <- readLAS(Lidar_file)
   
-  dtm <- create_dtm(las, classify = F, plot = F, output_path = output_folder,
+  dtm <- create_dtm(las, classify = T, plot = F, output_path = output_folder,
                     site = site_name)
   
   norm_las <- normalize_height(las, knnidw()) #other algorithms available
@@ -60,17 +59,19 @@ if (exists('Lidar_file')) {
                     site = site_name)
   
   if (tree == 'hedgerow_random' | tree == 'Hedgerow_random') {
-    hedgerow_agb <- random_hedgerows(chm, point_distance = 2, iterations = 30)
+    hedgerow_agb <- random_hedgerows(chm, point_distance = 2,
+                                    iterations = 30, output_folder, site_name)
     #point distance and number of iterations should be tuned, and
     #the study using this method performed a sensitivity analysis for distance
   } else { 
     variable <- function(x) {x * 0.1 + 5} #function for variable window size
-    Seg_algo <- watershed(chm, th_tree = 5, tol = .2, ext = 1)
+    Seg_algo <- watershed(chm, th_tree = 3, tol = .001, ext = 1)
     tree_segmentation <- detect_trees(norm_las, chm, window_size = variable,
                                       plot = F,
                                       segmentation_algorithm = Seg_algo)
     agb <- calculate_biomass(tree_segmentation, tree_type = tree, DBH = T,
-                             output_path = output_folder, site = site_name)
+                             output_path = output_folder, site = site_name,
+                             test_algorithms = TRUE)
   }
   end_time <- Sys.time()
   elapsed_time <- end_time - start_time
@@ -105,7 +106,6 @@ if (exists('Lidar_folder')) {
                               output_path = output_folder, site = name)
     }
   })
-  
   end_time <- Sys.time()
   elapsed_time <- end_time - start_time
   cat("Total time:", elapsed_time, sep = '\n')
